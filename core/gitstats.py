@@ -1,5 +1,6 @@
 import re
 import process
+from collections import defaultdict
 
 # return list of [h, date, subject, author, email, file, insertions, deletions]
 def gitNumstat():
@@ -83,4 +84,21 @@ def countMergesByAuthor():
             mergesByAuthor.append([author, email, int(commits)])
     
     return mergesByAuthor
+
+
+# return list of [author, commits, insertions, deletions]
+def countCommitsAndImpactsByAuthor(numstat):
+    commitsAndImpactsByAuthor = defaultdict(lambda: [0, 0, 0])
+    hs = list()
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        if h not in hs:
+            hs.append(h)
+            commitsAndImpactsByAuthor[author][0] += 1
+        commitsAndImpactsByAuthor[author][1] += insertions
+        commitsAndImpactsByAuthor[author][2] += deletions
+    
+    commitsAndImpactsByAuthor = map(lambda x: [x[0]] + x[1], commitsAndImpactsByAuthor.items())
+    return sorted(commitsAndImpactsByAuthor, key = lambda x: x[1], reverse = True)
+
 
