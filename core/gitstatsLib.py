@@ -166,11 +166,12 @@ def getImpactsOverMonth(numstat):
 
 
 # returns list of [author, eloc]
-def countEditedLinesOfCodeByAuthor(blame):
+def countEditedLinesOfCodeByAuthor(blame, filter=''):
     editedLinesOfCodeByAuthor = defaultdict(int)
     
     for (file, author, email, content) in blame:
-        editedLinesOfCodeByAuthor[author] += 1
+        if filter in file.lower():
+            editedLinesOfCodeByAuthor[author] += 1
     
     editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
     return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
@@ -178,25 +179,27 @@ def countEditedLinesOfCodeByAuthor(blame):
 
 # returns list of [author, eloc, stability]
 # stability is equal to 100 * eloc / insertions
-def countEditedLinesOfCodeAndStabilityByAuthor(blame, numstat):
+def countEditedLinesOfCodeAndStabilityByAuthor(blame, numstat, filter=''):
     editedLinesOfCodeAndStabilityByAuthor = defaultdict(lambda: [0,0])
     
     for (file, author, email, content) in blame:
-        editedLinesOfCodeAndStabilityByAuthor[author][0] += 1
+        if filter in file.lower():
+            editedLinesOfCodeAndStabilityByAuthor[author][0] += 1
     
     for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        editedLinesOfCodeAndStabilityByAuthor[author][1] += insertions
+        if filter in file.lower():
+            editedLinesOfCodeAndStabilityByAuthor[author][1] += insertions
     
     editedLinesOfCodeByAuthor = map(lambda x: [x[0], x[1][0], (100 * x[1][0] / x[1][1] if x[1][1] != 0 else 100)], editedLinesOfCodeAndStabilityByAuthor.items())
     return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
 
 
 # returns list of [email, eloc]
-def countEmptyLinesOfCodeByEmail(blame):
+def countEmptyLinesOfCodeByEmail(blame, filter=''):
     emptyLinesOfCodeByAuthor = defaultdict(int)
     
     for (file, author, email, content) in blame:
-        if not content.strip():
+        if filter in file.lower() and not content.strip():
             emptyLinesOfCodeByAuthor[email] += 1
     
     emptyLinesOfCodeByAuthor = map(lambda x: list(x), emptyLinesOfCodeByAuthor.items())
@@ -204,11 +207,13 @@ def countEmptyLinesOfCodeByEmail(blame):
 
 
 # returns list of [author, eloc]
-def countEditedLinesOfCodeByEmail(blame):
+def countEditedLinesOfCodeByEmail(blame, filter='', regex='.*'):
     editedLinesOfCodeByEmail = defaultdict(int)
-    
+    regex = re.compile(regex, flags=re.IGNORECASE)
+
     for (file, author, email, content) in blame:
-        editedLinesOfCodeByEmail[email] += 1
+        if filter in file.lower() and regex.match(content):
+            editedLinesOfCodeByEmail[email] += 1
     
     editedLinesOfCodeByEmail = map(lambda x: list(x), editedLinesOfCodeByEmail.items())
     return sorted(editedLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
