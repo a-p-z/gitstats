@@ -143,3 +143,23 @@ def countCommitsOverMonthByAuthor(numstat):
             commitsOverMonthByAuthor.append([next] + commits)
     
     return commitsOverMonthByAuthor
+
+
+# returns list of [date, insertions, deletions]
+def getImpactsOverMonth(numstat):
+    impactsOverMonth = list()
+    agg = defaultdict(lambda: [0,0])
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        agg[date[:7]][0] += deletions
+        agg[date[:7]][1] += insertions 
+    
+    for year in range(int(numstat[-1][1][:4]), int(numstat[0][1][:4]) + 1):
+        for month in range(1, 13):
+            if year == int(numstat[0][1][:4]) and month > int(numstat[0][1][5:7]):
+                break
+            date = "%d-%02d" % (year, month)
+            next = "%d-%02d" % (year, month + 1) if month < 12 else "%d-%02d" % (year + 1, 1)
+            impactsOverMonth.append([next] + agg[date])
+    
+    return impactsOverMonth
