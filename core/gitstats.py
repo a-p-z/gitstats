@@ -102,3 +102,19 @@ def countCommitsAndImpactsByAuthor(numstat):
     return sorted(commitsAndImpactsByAuthor, key = lambda x: x[1], reverse = True)
 
 
+# return list of [email, deletions]
+def countDeletionRatioByEmail(numstat):
+    commitsAndDeletionsByEmail = defaultdict(lambda: [0, 0])
+    hs = list()
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        if h not in hs:
+            hs.append(h)
+            commitsAndDeletionsByEmail[email][0] += 1
+        commitsAndDeletionsByEmail[email][1] += deletions
+    
+    deletionRatioByEmail = map(lambda x: [x[0], x[1][1]/x[1][0]], commitsAndDeletionsByEmail.items())
+    return sorted(deletionRatioByEmail, key = lambda x: x[1], reverse = True)
+
+
+
