@@ -21,3 +21,31 @@ def gitNumstat():
             numstat.append([h, date, subject, author, email, file, int(insertions), int(deletions)])
     
     return numstat
+
+
+# return list of [file, author, email, content]
+def gitBlame():
+    blame = list()
+    files = process.execute("git ls-files").split("\n")[0:-1]
+    
+    for file in files:
+        try:
+            lines = process.execute("git blame --line-porcelain %s" % file).split("\n")
+            for line in lines:
+                authorMatch = re.match(r"author (.+)", line)
+                emailMatch = re.match(r"author-mail <(.+)>", line)
+                if authorMatch:
+                    author = authorMatch.group(1).title()
+                    email = ""
+                
+                elif emailMatch:
+                    email = emailMatch.group(1)
+                
+                elif line.startswith("\t"):
+                    content = line[1:]
+                    blame.append([file, author, email, content])
+        
+        except process.ProcessException:
+            continue
+    
+    return blame
