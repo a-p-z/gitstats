@@ -175,3 +175,18 @@ def countEditedLinesOfCodeByAuthor(blame):
     editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
     return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
 
+
+# returns list of [author, eloc, stability]
+# stability is equal to 100 * eloc / insertions
+def countEditedLinesOfCodeAndStabilityByAuthor(blame, numstat):
+    editedLinesOfCodeAndStabilityByAuthor = defaultdict(lambda: [0,0])
+    
+    for (file, author, email, content) in blame:
+        editedLinesOfCodeAndStabilityByAuthor[author][0] += 1
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        editedLinesOfCodeAndStabilityByAuthor[author][1] += insertions
+    
+    editedLinesOfCodeByAuthor = map(lambda x: [x[0], x[1][0], (100 * x[1][0] / x[1][1] if x[1][1] != 0 else 100)], editedLinesOfCodeAndStabilityByAuthor.items())
+    return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+
