@@ -163,3 +163,15 @@ def getImpactsOverMonth(numstat):
             impactsOverMonth.append([next] + agg[date])
     
     return impactsOverMonth
+
+
+# returns list of [author, eloc]
+def countEditedLinesOfCodeByAuthor(blame):
+    editedLinesOfCodeByAuthor = defaultdict(int)
+    
+    for (file, author, email, content) in blame:
+        editedLinesOfCodeByAuthor[author] += 1
+    
+    editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
+    return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+
