@@ -117,4 +117,29 @@ def countDeletionRatioByEmail(numstat):
     return sorted(deletionRatioByEmail, key = lambda x: x[1], reverse = True)
 
 
-
+# returns [["date", "author1", "author2", ...],
+#          [ date ,     n1   ,     n2   , ...],
+#           ... ]
+def countCommitsOverMonthByAuthor(numstat):
+    commitsOverMonthByAuthor = list()
+    agg = defaultdict(lambda: defaultdict(lambda: set()))
+    authors = set()
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        agg[date[:7]][author].add(h)
+        authors.add(author)
+    
+    commitsOverMonthByAuthor.append(["date"] + list(authors))
+    
+    for year in range(int(numstat[-1][1][:4]), int(numstat[0][1][:4]) + 1):
+        for month in range(1, 13):
+            if year == int(numstat[0][1][:4]) and month > int(numstat[0][1][5:7]):
+                break
+            date = "%d-%02d" % (year, month)
+            next = "%d-%02d" % (year, month + 1) if month < 12 else "%d-%02d" % (year + 1, 1)
+            commits = list()
+            for author in authors:  
+                commits.append(len(agg[date][author]))
+            commitsOverMonthByAuthor.append([next] + commits)
+    
+    return commitsOverMonthByAuthor
