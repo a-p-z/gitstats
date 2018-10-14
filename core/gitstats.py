@@ -203,3 +203,13 @@ def countEmptyLinesOfCodeByEmail(blame):
     return sorted(emptyLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
 
 
+# returns list of [author, eloc]
+def countEditedLinesOfCodeByEmail(blame):
+    editedLinesOfCodeByEmail = defaultdict(int)
+    
+    for (file, author, email, content) in blame:
+        editedLinesOfCodeByEmail[email] += 1
+    
+    editedLinesOfCodeByEmail = map(lambda x: list(x), editedLinesOfCodeByEmail.items())
+    return sorted(editedLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
+
