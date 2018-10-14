@@ -53,3 +53,19 @@ def gitBlame():
 
 def countCommits():
     return int(process.execute("git rev-list --no-merges --count HEAD"))
+
+
+# return list of [author, email, commits]
+def countCommitsByAuthor():
+    commitsByAuthor = list()
+    
+    for line in process.execute("git shortlog -s -e -n --no-merges").split("\n"):
+        match = re.match(r"\s*(\d+)\t(.+) <(.+)>", line)
+        if match:
+            author = match.group(2).title()
+            email = match.group(3)
+            commits = match.group(1)
+            commitsByAuthor.append([author, email, int(commits)])
+    
+    return commitsByAuthor
+
