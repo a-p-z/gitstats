@@ -69,3 +69,18 @@ def countCommitsByAuthor():
     
     return commitsByAuthor
 
+
+# return list of [author, email, merges]
+def countMergesByAuthor():
+    mergesByAuthor = list()
+    
+    for line in process.execute("git shortlog -s -e -n --merges").split("\n"):
+        match = re.match(r"\s*(\d+)\t(.+) <(.+)>", line)
+        if match:
+            author = match.group(2).title()
+            email = match.group(3)
+            commits = match.group(1)
+            mergesByAuthor.append([author, email, int(commits)])
+    
+    return mergesByAuthor
+
