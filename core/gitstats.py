@@ -49,3 +49,7 @@ def gitBlame():
             continue
     
     return blame
+
+
+def countCommits():
+    return int(process.execute("git rev-list --no-merges --count HEAD"))
