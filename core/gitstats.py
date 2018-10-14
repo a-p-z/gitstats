@@ -213,3 +213,15 @@ def countEditedLinesOfCodeByEmail(blame):
     editedLinesOfCodeByEmail = map(lambda x: list(x), editedLinesOfCodeByEmail.items())
     return sorted(editedLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
 
+
+# return list of [ext, num]
+def countFilesByExtension():
+    filesByExtension = defaultdict(int)
+    files = process.execute("git ls-files").split("\n")[0:-1]
+    exts = map(lambda file: file.split(".")[-1] if "." in file else "NO EXT", files)
+    
+    for ext in exts:
+        filesByExtension[ext] += 1
+    
+    filesByExtension = map(lambda x: list(x), filesByExtension.items())
+    return sorted(filesByExtension, key = lambda x: x[1], reverse = True)
