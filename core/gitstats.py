@@ -237,3 +237,17 @@ def getMostFrequentlyCommittedFiles(numstat):
     mostFrequentlyCommittedFiles = map(lambda x: list(x), mostFrequentlyCommittedFiles.items())
     return sorted(mostFrequentlyCommittedFiles, key = lambda x: x[1], reverse = True)
 
+
+# return [date, subject, author, num_of_files, insertions, deletions]
+def orderCommitsByImpact(numstat):
+    commits = dict()
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        if h in commits.keys():
+            commits[h][3] += 1
+            commits[h][4] += insertions
+            commits[h][5] += deletions
+        else:
+            commits[h] = [date[:10], subject, author, 1, insertions, deletions]
+    
+    return sorted(commits.values(), key = lambda x: x[4] + x[5], reverse = True)
