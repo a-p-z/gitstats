@@ -225,3 +225,15 @@ def countFilesByExtension():
     
     filesByExtension = map(lambda x: list(x), filesByExtension.items())
     return sorted(filesByExtension, key = lambda x: x[1], reverse = True)
+
+
+# return list of [file, commits]
+def getMostFrequentlyCommittedFiles(numstat):
+    mostFrequentlyCommittedFiles = defaultdict(int)
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        mostFrequentlyCommittedFiles[file] += 1
+    
+    mostFrequentlyCommittedFiles = map(lambda x: list(x), mostFrequentlyCommittedFiles.items())
+    return sorted(mostFrequentlyCommittedFiles, key = lambda x: x[1], reverse = True)
+
