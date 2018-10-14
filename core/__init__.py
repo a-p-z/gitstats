@@ -1,2 +1,2 @@
-import gitstats
+import gitstatsLib
 from template import Template
