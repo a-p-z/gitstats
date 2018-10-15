@@ -211,16 +211,28 @@ def countEditedLinesOfCodeAndStabilityByAuthor(blame, numstat, filter=''):
     return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
 
 
-# returns list of [email, eloc]
-def countEmptyLinesOfCodeByEmail(blame, filter=''):
+# returns list of [author, eloc]
+def countEmptyLinesOfCodeByAuthor(blame, filter=''):
     emptyLinesOfCodeByAuthor = defaultdict(int)
     
     for (file, author, email, content) in blame:
         if filter in file.lower() and not content.strip():
-            emptyLinesOfCodeByAuthor[email] += 1
+            emptyLinesOfCodeByAuthor[author] += 1
     
     emptyLinesOfCodeByAuthor = map(lambda x: list(x), emptyLinesOfCodeByAuthor.items())
     return sorted(emptyLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+
+
+    # returns list of [email, eloc]
+def countEmptyLinesOfCodeByEmail(blame, filter=''):
+    emptyLinesOfCodeByEmail = defaultdict(int)
+    
+    for (file, author, email, content) in blame:
+        if filter in file.lower() and not content.strip():
+            emptyLinesOfCodeByEmail[email] += 1
+    
+    emptyLinesOfCodeByEmail = map(lambda x: list(x), emptyLinesOfCodeByEmail.items())
+    return sorted(emptyLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
 
 
 # returns list of [author, eloc]
