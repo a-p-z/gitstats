@@ -102,6 +102,22 @@ def countCommitsAndImpactsByAuthor(numstat):
     return sorted(commitsAndImpactsByAuthor, key = lambda x: x[1], reverse = True)
 
 
+# return list of [author, deletions]
+def countDeletionRatioByAuthor(numstat):
+    commitsAndDeletionsByAuthor = defaultdict(lambda: [0, 0])
+    hs = list()
+    
+    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
+        if h not in hs:
+            hs.append(h)
+            commitsAndDeletionsByAuthor[author][0] += 1
+        commitsAndDeletionsByAuthor[author][1] += deletions
+    
+    deletionRatioByAuthor = map(lambda x: [x[0], x[1][1]/x[1][0]], commitsAndDeletionsByAuthor.items())
+    return sorted(deletionRatioByAuthor, key = lambda x: x[1], reverse = True)
+
+
+
 # return list of [email, deletions]
 def countDeletionRatioByEmail(numstat):
     commitsAndDeletionsByEmail = defaultdict(lambda: [0, 0])
@@ -166,11 +182,12 @@ def getImpactsOverMonth(numstat):
 
 
 # returns list of [author, eloc]
-def countEditedLinesOfCodeByAuthor(blame, filter=''):
+def countEditedLinesOfCodeByAuthor(blame, filter='', regex='.*'):
     editedLinesOfCodeByAuthor = defaultdict(int)
-    
+    regex = re.compile(regex, flags=re.IGNORECASE)
+
     for (file, author, email, content) in blame:
-        if filter in file.lower():
+        if filter in file.lower() and regex.match(content):
             editedLinesOfCodeByAuthor[author] += 1
     
     editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
