@@ -1,21 +1,64 @@
 import re
 import process
 from collections import defaultdict
+from blame import Blame
 from commit import Commit
 
 GIT_LOG_COMMAND = "git log --pretty=tformat:'.:*-*:.%n%h%n%aI%n%s%n%aN%n%aE%n%cN%n%cE' --numstat --no-merges --date=iso8601"
+GIT_LS_FILES_COMMAND = "git ls-files"
+GIT_BLAME_COMMAND = "git blame --line-porcelain %s"
 
 def git_log():
     return process.execute(GIT_LOG_COMMAND).split(".:*-*:.\n")[1:]
 
-def get_commits(rawgitlogstring):
-    return [Commit(rawgitlogtring) for rawgitlogtring in rawgitlogstring]
+
+def git_ls_files():
+    return process.execute(GIT_LS_FILES_COMMAND).split("\n")[0:-1]
+
+
+def git_blame(file):
+    try:
+        return split_blame(process.execute(GIT_BLAME_COMMAND % file))
+    except:
+        print "Error getting blame of %s" % file
+        raise
+
+
+def get_commits():
+    return [Commit(rawgitlog) for rawgitlog in git_log()]
+
+
+def get_blamesOf(file):
+    return [Blame(rawgitblame) for rawgitblame in git_blame(file)]
+
+def get_blames():
+    blames = list()
+    for file in git_ls_files():
+        [blames.append(blame) for blame in get_blamesOf(file)]
+
+    return blames
+
+
+def split_blame(rawgitblameoutput):
+    rawgitblames = list()
+    rawgitblame = list()
+    
+    for line in rawgitblameoutput.split("\n"):
+        rawgitblame.append(line)
+        if not line:
+            continue
+        elif line[0] == "\t":
+            rawgitblames.append("\n".join(rawgitblame))
+            rawgitblame = list()
+    
+    return rawgitblames
+
 
 # return list of [h, date, subject, author, email, file, insertions, deletions]
 def gitNumstat():
     numstat = list()
     
-    for c in get_commits(git_log()):
+    for c in get_commits():
         for d in c.diffstats:
            numstat.append([c.hash, c.date.isoformat(), c.subject, c.author.name, c.author.email, d.filename, d.insertions, d.deletions])
     
@@ -24,30 +67,7 @@ def gitNumstat():
 
 # return list of [file, author, email, content]
 def gitBlame():
-    blame = list()
-    files = process.execute("git ls-files").split("\n")[0:-1]
-    
-    for file in files:
-        try:
-            lines = process.execute("git blame --line-porcelain %s" % file).split("\n")
-            for line in lines:
-                authorMatch = re.match(r"author (.+)", line)
-                emailMatch = re.match(r"author-mail <(.+)>", line)
-                if authorMatch:
-                    author = authorMatch.group(1).title()
-                    email = ""
-                
-                elif emailMatch:
-                    email = emailMatch.group(1)
-                
-                elif line.startswith("\t"):
-                    content = line[1:]
-                    blame.append([file, author, email, content])
-        
-        except process.ProcessException:
-            continue
-    
-    return blame
+    return [[blame.filename, blame.author.name, blame.author.email, blame.content] for blame in get_blames()]
 
 
 def countCommits():
@@ -185,7 +205,7 @@ def countEditedLinesOfCodeByAuthor(blame, filter='', regex='.*'):
     regex = re.compile(regex, flags=re.IGNORECASE)
 
     for (file, author, email, content) in blame:
-        if filter in file.lower() and regex.match(content):
+        if filter in file.lower() and content and regex.match(content):
             editedLinesOfCodeByAuthor[author] += 1
     
     editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
@@ -214,7 +234,7 @@ def countEmptyLinesOfCodeByAuthor(blame, filter=''):
     emptyLinesOfCodeByAuthor = defaultdict(int)
     
     for (file, author, email, content) in blame:
-        if filter in file.lower() and not content.strip():
+        if filter in file.lower() and content and not content.strip():
             emptyLinesOfCodeByAuthor[author] += 1
     
     emptyLinesOfCodeByAuthor = map(lambda x: list(x), emptyLinesOfCodeByAuthor.items())
@@ -226,7 +246,7 @@ def countEmptyLinesOfCodeByEmail(blame, filter=''):
     emptyLinesOfCodeByEmail = defaultdict(int)
     
     for (file, author, email, content) in blame:
-        if filter in file.lower() and not content.strip():
+        if filter in file.lower() and content and not content.strip():
             emptyLinesOfCodeByEmail[email] += 1
     
     emptyLinesOfCodeByEmail = map(lambda x: list(x), emptyLinesOfCodeByEmail.items())
@@ -239,7 +259,7 @@ def countEditedLinesOfCodeByEmail(blame, filter='', regex='.*'):
     regex = re.compile(regex, flags=re.IGNORECASE)
 
     for (file, author, email, content) in blame:
-        if filter in file.lower() and regex.match(content):
+        if filter in file.lower() and content and regex.match(content):
             editedLinesOfCodeByEmail[email] += 1
     
     editedLinesOfCodeByEmail = map(lambda x: list(x), editedLinesOfCodeByEmail.items())
