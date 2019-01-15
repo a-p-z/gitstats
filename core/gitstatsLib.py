@@ -1,25 +1,23 @@
 import re
 import process
 from collections import defaultdict
+from commit import Commit
+
+GIT_LOG_COMMAND = "git log --pretty=tformat:'.:*-*:.%n%h%n%aI%n%s%n%aN%n%aE%n%cN%n%cE' --numstat --no-merges --date=iso8601"
+
+def git_log():
+    return process.execute(GIT_LOG_COMMAND).split(".:*-*:.\n")[1:]
+
+def get_commits(rawgitlogstring):
+    return [Commit(rawgitlogtring) for rawgitlogtring in rawgitlogstring]
 
 # return list of [h, date, subject, author, email, file, insertions, deletions]
 def gitNumstat():
     numstat = list()
-    lines = process.execute("git log --pretty=tformat:'%h,%aI,%s,%aN,%ae' --numstat --no-merges").split("\n")
     
-    for line in lines:
-        match = re.match(r"(\w+),([0-9\-T:\+]+),(.*),(.*),([a-zA-Z0-9_\.\+\-]+@[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-\.]+)", line)
-        if match: 
-            (file, insertions, deletions) = ("", 0, 0)
-            h = match.group(1)
-            date = match.group(2)
-            subject = match.group(3)
-            author = match.group(4).title()
-            email = match.group(5)
-        
-        elif re.match(r"\d+\t+\d+\t+.+", line):
-            (insertions, deletions, file) = line.split("\t")
-            numstat.append([h, date, subject, author, email, file, int(insertions), int(deletions)])
+    for c in get_commits(git_log()):
+        for d in c.diffstats:
+           numstat.append([c.hash, c.date.isoformat(), c.subject, c.author.name, c.author.email, d.filename, d.insertions, d.deletions])
     
     return numstat
 
