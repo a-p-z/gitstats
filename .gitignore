@@ -1,1 +1,4 @@
 *.pyc
+/.idea/
+*/mailmap.yaml
+*/regexes.yaml

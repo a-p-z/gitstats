@@ -1,305 +1,327 @@
+import logging
 import re
-import process
 from collections import defaultdict
-from blame import Blame
-from commit import Commit
+from typing import Tuple, List, Dict, Any
 
-GIT_LOG_COMMAND = "git log --pretty=tformat:'.:*-*:.%n%h%n%aI%n%s%n%aN%n%aE%n%cN%n%cE' --numstat --no-merges --date=iso8601"
-GIT_LS_FILES_COMMAND = "git ls-files"
-GIT_BLAME_COMMAND = "git blame --line-porcelain %s"
-
-def git_log():
-    return process.execute(GIT_LOG_COMMAND).split(".:*-*:.\n")[1:]
-
-
-def git_ls_files():
-    return process.execute(GIT_LS_FILES_COMMAND).split("\n")[0:-1]
+from core import gitls, gitforeachref
+from core.mailmap import Mailmap
+from core.model.author import Author
+from core.model.blame import Blame
+from core.model.fileType import FileType
+from core.model.numstat import Numstat
+from core.utilities import second_column, aggregate_and_sum, first_column
 
 
-def git_blame(file):
-    try:
-        return split_blame(process.execute(GIT_BLAME_COMMAND % file))
-    except:
-        print "Error getting blame of %s" % file
-        raise
+def count_commits_and_impacts_by_author(numstat: List[Numstat]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: list of [author, commits, insertions, deletions]
+    """
+    logging.info("counting commits and impacts by author")
+    insertions_by_author = aggregate_and_sum(numstat, "author", "insertions")
+    deletions_by_author = aggregate_and_sum(numstat, "author", "deletions")
+    numstat = __unique_by(numstat, "hash")
+    commits_by_author = __count_by_attr(numstat, "author")
+
+    author_commits_insertions_deletions = list()
+    for author in sorted(insertions_by_author.keys()):
+        commits = commits_by_author[author]
+        insertions = insertions_by_author[author]
+        deletions = deletions_by_author[author]
+        author_commits_insertions_deletions.append([author, commits, insertions, deletions])
+
+    return sorted(author_commits_insertions_deletions, key=second_column, reverse=True)
 
 
-def get_commits():
-    return [Commit(rawgitlog) for rawgitlog in git_log()]
+def count_commits_on_behalf_of(numstat: List[Numstat]) -> Tuple[List, List[List]]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: list of [committer, commits, author]
+    """
+    logging.info("counting commits and on behalf of")
+    commits_and_impacts_by_author = defaultdict(lambda: defaultdict(int))
 
-
-def get_blamesOf(file):
-    return [Blame(rawgitblame) for rawgitblame in git_blame(file)]
-
-def get_blames():
-    blames = list()
-    for file in git_ls_files():
-        [blames.append(blame) for blame in get_blamesOf(file)]
-
-    return blames
-
-
-def split_blame(rawgitblameoutput):
-    rawgitblames = list()
-    rawgitblame = list()
-    
-    for line in rawgitblameoutput.split("\n"):
-        rawgitblame.append(line)
-        if not line:
-            continue
-        elif line[0] == "\t":
-            rawgitblames.append("\n".join(rawgitblame))
-            rawgitblame = list()
-    
-    return rawgitblames
-
-
-# return list of [h, date, subject, author, email, file, insertions, deletions]
-def gitNumstat():
-    numstat = list()
-    
-    for c in get_commits():
-        for d in c.diffstats:
-           numstat.append([c.hash, c.date.isoformat(), c.subject, c.author.name, c.author.email, d.filename, d.insertions, d.deletions])
-    
-    return numstat
-
-
-# return list of [file, author, email, content]
-def gitBlame():
-    return [[blame.filename, blame.author.name, blame.author.email, blame.content] for blame in get_blames()]
-
-
-def countCommits():
-    return int(process.execute("git rev-list --no-merges --count HEAD"))
-
-
-# return list of [author, email, commits]
-def countCommitsByAuthor():
-    commitsByAuthor = list()
-    
-    for line in process.execute("git shortlog -s -e -n --no-merges").split("\n"):
-        match = re.match(r"\s*(\d+)\t(.+) <(.+)>", line)
-        if match:
-            author = match.group(2).title()
-            email = match.group(3)
-            commits = match.group(1)
-            commitsByAuthor.append([author, email, int(commits)])
-    
-    return commitsByAuthor
-
-
-# return list of [author, email, merges]
-def countMergesByAuthor():
-    mergesByAuthor = list()
-    
-    for line in process.execute("git shortlog -s -e -n --merges").split("\n"):
-        match = re.match(r"\s*(\d+)\t(.+) <(.+)>", line)
-        if match:
-            author = match.group(2).title()
-            email = match.group(3)
-            commits = match.group(1)
-            mergesByAuthor.append([author, email, int(commits)])
-    
-    return mergesByAuthor
-
-
-# return list of [author, commits, insertions, deletions]
-def countCommitsAndImpactsByAuthor(numstat):
-    commitsAndImpactsByAuthor = defaultdict(lambda: [0, 0, 0])
-    hs = list()
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        if h not in hs:
-            hs.append(h)
-            commitsAndImpactsByAuthor[author][0] += 1
-        commitsAndImpactsByAuthor[author][1] += insertions
-        commitsAndImpactsByAuthor[author][2] += deletions
-    
-    commitsAndImpactsByAuthor = map(lambda x: [x[0]] + x[1], commitsAndImpactsByAuthor.items())
-    return sorted(commitsAndImpactsByAuthor, key = lambda x: x[1], reverse = True)
-
-
-# return list of [author, deletions]
-def countDeletionRatioByAuthor(numstat):
-    commitsAndDeletionsByAuthor = defaultdict(lambda: [0, 0])
-    hs = list()
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        if h not in hs:
-            hs.append(h)
-            commitsAndDeletionsByAuthor[author][0] += 1
-        commitsAndDeletionsByAuthor[author][1] += deletions
-    
-    deletionRatioByAuthor = map(lambda x: [x[0], x[1][1]/x[1][0]], commitsAndDeletionsByAuthor.items())
-    return sorted(deletionRatioByAuthor, key = lambda x: x[1], reverse = True)
-
-
-
-# return list of [email, deletions]
-def countDeletionRatioByEmail(numstat):
-    commitsAndDeletionsByEmail = defaultdict(lambda: [0, 0])
-    hs = list()
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        if h not in hs:
-            hs.append(h)
-            commitsAndDeletionsByEmail[email][0] += 1
-        commitsAndDeletionsByEmail[email][1] += deletions
-    
-    deletionRatioByEmail = map(lambda x: [x[0], x[1][1]/x[1][0]], commitsAndDeletionsByEmail.items())
-    return sorted(deletionRatioByEmail, key = lambda x: x[1], reverse = True)
-
-
-# returns [["date", "author1", "author2", ...],
-#          [ date ,     n1   ,     n2   , ...],
-#           ... ]
-def countCommitsOverMonthByAuthor(numstat):
-    commitsOverMonthByAuthor = list()
-    agg = defaultdict(lambda: defaultdict(lambda: set()))
+    numstat = __unique_by(numstat, "hash")
+    numstat = filter(lambda x: x.author != x.committer, numstat)
     authors = set()
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        agg[date[:7]][author].add(h)
-        authors.add(author)
-    
-    commitsOverMonthByAuthor.append(["date"] + list(authors))
-    
-    for year in range(int(numstat[-1][1][:4]), int(numstat[0][1][:4]) + 1):
-        for month in range(1, 13):
-            if year == int(numstat[0][1][:4]) and month > int(numstat[0][1][5:7]):
-                break
-            date = "%d-%02d" % (year, month)
-            next = "%d-%02d" % (year, month + 1) if month < 12 else "%d-%02d" % (year + 1, 1)
-            commits = list()
-            for author in authors:  
-                commits.append(len(agg[date][author]))
-            commitsOverMonthByAuthor.append([next] + commits)
-    
-    return commitsOverMonthByAuthor
+    for n in numstat:
+        commits_and_impacts_by_author[n.committer][n.author] += 1
+        authors.add(n.author)
+
+    authors = sorted(authors)
+    header = ["    ┌─> author\ncommitter"]
+    header.extend(authors)
+
+    data = list()
+    for committer in sorted(commits_and_impacts_by_author.keys()):
+        data.append([committer] + list(map(lambda author: commits_and_impacts_by_author[committer][author], authors)))
+
+    return header, data
 
 
-# returns list of [date, insertions, deletions]
-def getImpactsOverMonth(numstat):
-    impactsOverMonth = list()
-    agg = defaultdict(lambda: [0,0])
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        agg[date[:7]][0] += deletions
-        agg[date[:7]][1] += insertions 
-    
-    for year in range(int(numstat[-1][1][:4]), int(numstat[0][1][:4]) + 1):
-        for month in range(1, 13):
-            if year == int(numstat[0][1][:4]) and month > int(numstat[0][1][5:7]):
-                break
-            date = "%d-%02d" % (year, month)
-            next = "%d-%02d" % (year, month + 1) if month < 12 else "%d-%02d" % (year + 1, 1)
-            impactsOverMonth.append([next] + agg[date])
-    
-    return impactsOverMonth
+def count_deletion_ratio_by_author(numstat: List[Numstat], file_types: List[FileType]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :param file_types: list of file types
+    :return: list of [author, deletion_ratio]
+    """
+    logging.info("counting deletion ratio by author")
+    numstat = list(filter(lambda n: FileType.any_match(file_types, n.file), numstat))
+    deletions_by_author = aggregate_and_sum(numstat, "author", "deletions")
+    numstat = __unique_by(numstat, "hash")
+    commits_by_author = __count_by_attr(numstat, "author")
+
+    author_deletion_ratio = list()
+    for author in commits_by_author.keys():
+        deletion_ratio = deletions_by_author[author] / commits_by_author[author]
+        author_deletion_ratio.append([author, deletion_ratio])
+    return sorted(author_deletion_ratio, key=second_column, reverse=True)
 
 
-# returns list of [author, eloc]
-def countEditedLinesOfCodeByAuthor(blame, filter='', regex='.*'):
-    editedLinesOfCodeByAuthor = defaultdict(int)
-    regex = re.compile(regex, flags=re.IGNORECASE)
+def count_commits_over_month_by_author(numstat: List[Numstat]) -> Tuple[List, List[List]]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: ["date", "author1", "author2", ...], [[ date ,     n1   ,     n2   , ...],
+                                                    ... ]
+    """
+    logging.info("counting commits over month by author")
+    authors = set()
+    aggregate_by_month_and_author = defaultdict(lambda: defaultdict(set))
 
-    for (file, author, email, content) in blame:
-        if filter in file.lower() and content and regex.match(content):
-            editedLinesOfCodeByAuthor[author] += 1
-    
-    editedLinesOfCodeByAuthor = map(lambda x: list(x), editedLinesOfCodeByAuthor.items())
-    return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+    for n in numstat:
+        date = n.date.strftime("%Y-%m")
+        aggregate_by_month_and_author[date][n.author].add(n.hash)
+        authors.add(n.author)
 
+    authors = sorted(authors)
+    header = ["date"]
+    header.extend(authors)
 
-# returns list of [author, eloc, stability]
-# stability is equal to 100 * eloc / insertions
-def countEditedLinesOfCodeAndStabilityByAuthor(blame, numstat, filter=''):
-    editedLinesOfCodeAndStabilityByAuthor = defaultdict(lambda: [0,0])
-    
-    for (file, author, email, content) in blame:
-        if filter in file.lower():
-            editedLinesOfCodeAndStabilityByAuthor[author][0] += 1
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        if filter in file.lower():
-            editedLinesOfCodeAndStabilityByAuthor[author][1] += insertions
-    
-    editedLinesOfCodeByAuthor = map(lambda x: [x[0], x[1][0], (100 * x[1][0] / x[1][1] if x[1][1] != 0 else 100)], editedLinesOfCodeAndStabilityByAuthor.items())
-    return sorted(editedLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+    commits_over_month_by_author = list()
+    for date in sorted(aggregate_by_month_and_author.keys()):
+        commits = [date]
+        commits.extend(map(lambda author: len(aggregate_by_month_and_author[date][author]), authors))
+        commits_over_month_by_author.append(commits)
+    commits_over_month_by_author[-1][0] = "now"
+    return header, commits_over_month_by_author
 
 
-# returns list of [author, eloc]
-def countEmptyLinesOfCodeByAuthor(blame, filter=''):
-    emptyLinesOfCodeByAuthor = defaultdict(int)
-    
-    for (file, author, email, content) in blame:
-        if filter in file.lower() and content and not content.strip():
-            emptyLinesOfCodeByAuthor[author] += 1
-    
-    emptyLinesOfCodeByAuthor = map(lambda x: list(x), emptyLinesOfCodeByAuthor.items())
-    return sorted(emptyLinesOfCodeByAuthor, key = lambda x: x[1], reverse = True)
+def get_impacts_over_month(numstat: List[Numstat]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: list of [date, insertions, deletions]
+    """
+    logging.info("calculating impacts over month")
+    aggregate_by_date = defaultdict(lambda: defaultdict(int))
+    for n in numstat:
+        date = n.date.strftime("%Y-%m")
+        aggregate_by_date[date]["insertions"] += n.insertions
+        aggregate_by_date[date]["deletions"] += n.deletions
+
+    impacts_over_month = list()
+    for date in sorted(aggregate_by_date.keys()):
+        label = date
+        insertions = aggregate_by_date[date]["insertions"]
+        deletions = aggregate_by_date[date]["deletions"]
+        impacts_over_month.append([label, insertions, deletions])
+    impacts_over_month[-1][0] = "now"
+    return impacts_over_month
 
 
-    # returns list of [email, eloc]
-def countEmptyLinesOfCodeByEmail(blame, filter=''):
-    emptyLinesOfCodeByEmail = defaultdict(int)
-    
-    for (file, author, email, content) in blame:
-        if filter in file.lower() and content and not content.strip():
-            emptyLinesOfCodeByEmail[email] += 1
-    
-    emptyLinesOfCodeByEmail = map(lambda x: list(x), emptyLinesOfCodeByEmail.items())
-    return sorted(emptyLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
+def count_edited_lines_of_code_by_author(blame: List[Blame],
+                                         file_types: List[FileType],
+                                         content_regex: str = r".*") -> List[List]:
+    """
+    :param blame:result of :func: git_blame
+    :param file_types: list of file types
+    :param content_regex: regular expression pattern
+    :return: list of [author, eloc]
+    """
+    logging.info("counting edited lines of code by author for [%s] and content=%s",
+                 ", ".join(map(str, file_types)),
+                 content_regex)
+    content_regex = re.compile(content_regex, flags=re.IGNORECASE)
+
+    blame = list(filter(lambda x:
+                        FileType.any_match(file_types, x.file) and
+                        x.content and
+                        content_regex.match(x.content),
+                        blame))
+
+    edited_lines_of_code_by_author = __count_by_attr(blame, "author")
+    edited_lines_of_code_by_author = map(list, edited_lines_of_code_by_author.items())
+    return sorted(edited_lines_of_code_by_author, key=second_column, reverse=True)
 
 
-# returns list of [author, eloc]
-def countEditedLinesOfCodeByEmail(blame, filter='', regex='.*'):
-    editedLinesOfCodeByEmail = defaultdict(int)
-    regex = re.compile(regex, flags=re.IGNORECASE)
+def count_edited_lines_of_code_and_stability_by_author(numstat: List[Numstat],
+                                                       blame: List[Blame],
+                                                       file_types: List[FileType]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :param blame:result of :func: git_blame
+    :param file_types: list of file types
+    :return: list of [author, eloc, stability]
+    """
+    logging.info("counting edited lines of code and stability by author for [%s]", ", ".join(map(str, file_types)))
 
-    for (file, author, email, content) in blame:
-        if filter in file.lower() and content and regex.match(content):
-            editedLinesOfCodeByEmail[email] += 1
-    
-    editedLinesOfCodeByEmail = map(lambda x: list(x), editedLinesOfCodeByEmail.items())
-    return sorted(editedLinesOfCodeByEmail, key = lambda x: x[1], reverse = True)
+    blame = list(filter(lambda x: FileType.any_match(file_types, x.file) and x.content, blame))
+    edited_lines_of_code_by_author = __count_by_attr(blame, "author")
 
+    numstat = list(filter(lambda x: FileType.any_match(file_types, x.file), numstat))
+    insertions_by_author = aggregate_and_sum(numstat, "author", "insertions")
 
-# return list of [ext, num]
-def countFilesByExtension():
-    filesByExtension = defaultdict(int)
-    files = process.execute("git ls-files").split("\n")[0:-1]
-    exts = map(lambda file: file.split(".")[-1] if "." in file else "NO EXT", files)
-    
-    for ext in exts:
-        filesByExtension[ext] += 1
-    
-    filesByExtension = map(lambda x: list(x), filesByExtension.items())
-    return sorted(filesByExtension, key = lambda x: x[1], reverse = True)
-
-
-# return list of [file, commits]
-def getMostFrequentlyCommittedFiles(numstat):
-    mostFrequentlyCommittedFiles = defaultdict(int)
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        mostFrequentlyCommittedFiles[file] += 1
-    
-    mostFrequentlyCommittedFiles = map(lambda x: list(x), mostFrequentlyCommittedFiles.items())
-    return sorted(mostFrequentlyCommittedFiles, key = lambda x: x[1], reverse = True)
+    author_eloc_stability = list()
+    for author in insertions_by_author.keys():
+        eloc = edited_lines_of_code_by_author[author]
+        insertions = insertions_by_author[author]
+        stability = float("{:.2f}".format(100 * eloc / insertions))
+        author_eloc_stability.append([author, eloc, stability])
+    return sorted(author_eloc_stability, key=second_column, reverse=True)
 
 
-# return [date, subject, author, num_of_files, insertions, deletions]
-def orderCommitsByImpact(numstat):
-    commits = dict()
-    
-    for (h, date, subject, author, email, file, insertions, deletions) in numstat:
-        if h in commits.keys():
-            commits[h][3] += 1
-            commits[h][4] += insertions
-            commits[h][5] += deletions
-        else:
-            commits[h] = [date[:10], subject, author, 1, insertions, deletions]
-    
-    return sorted(commits.values(), key = lambda x: x[4] + x[5], reverse = True)
+def count_empty_lines_of_code_by_author(blame: List[Blame], file_types: List[FileType]) -> List[List]:
+    """
+    :param blame: result of :func: git_blame
+    :param file_types: list of file types
+    :return: list of [author, eloc]
+    """
+    logging.info("counting empty lines of code by author for [%s]", ", ".join(map(str, file_types)))
+    blame = list(filter(lambda x:
+                        FileType.any_match(file_types, x.file) and
+                        x.content and
+                        not x.content.strip(),
+                        blame))
+
+    empty_lines_of_code_by_author = __count_by_attr(blame, "author")
+    empty_lines_of_code_by_author = map(list, empty_lines_of_code_by_author.items())
+    return sorted(empty_lines_of_code_by_author, key=second_column, reverse=True)
+
+
+def count_files_by_extension() -> List[List]:
+    """
+    :return: list of [ext, num]
+    """
+    logging.info("counting files by extension")
+    extensions = map(lambda file: file.split(".")[-1] if "." in file else "NO EXT", gitls.git_ls_files())
+
+    files_by_extension = defaultdict(int)
+    for extension in extensions:
+        files_by_extension[extension] += 1
+
+    extension_num = map(list, files_by_extension.items())
+    return sorted(extension_num, key=second_column, reverse=True)
+
+
+def get_most_frequently_committed_files(numstat: List[Numstat]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: list of [file, commits]
+    """
+    logging.info("getting most frequently committed files")
+    commit_by_file = __count_by_attr(numstat, "file")
+    file_commits = map(list, commit_by_file.items())
+    return sorted(file_commits, key=second_column, reverse=True)
+
+
+def sorted_commits_by_impact(numstat: List[Numstat]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :return: list of [date, subject, author, num_of_files, insertions, deletions]
+    """
+    logging.info("ordering commits by impact")
+    commits = defaultdict(lambda: ["0000-00-00", "", Author("", "", ""), 0, 0, 0])
+
+    for n in numstat:
+        commits[n.hash][0] = n.date.strftime("%Y-%m-%d")
+        commits[n.hash][1] = n.subject
+        commits[n.hash][2] = n.author
+        commits[n.hash][3] += 1
+        commits[n.hash][4] += n.insertions
+        commits[n.hash][5] += n.deletions
+
+    date_subject_author_num_of_files_insertions_deletions = commits.values()
+    return sorted(date_subject_author_num_of_files_insertions_deletions, key=lambda x: x[4] + x[5], reverse=True)
+
+
+def sorted_refs_remotes_origin_by_date() -> List[List]:
+    """
+    :return: list of [date, author, ref]
+    """
+    return sorted(gitforeachref.git_refs_remotes_origin(), key=first_column)
+
+
+def count_refs_remotes_origin_by_author() -> List[List]:
+    """
+    :return: list of [author, total]
+    """
+    refs_remotes_origin_by_author = defaultdict(int)
+    for item in gitforeachref.git_refs_remotes_origin():
+        refs_remotes_origin_by_author[item[1]] += 1
+    refs_remotes_origin_by_author = map(list, refs_remotes_origin_by_author.items())
+    return sorted(refs_remotes_origin_by_author, key=second_column, reverse=True)
+
+
+def count_not_compliant_subjects_by_author(numstat: List[Numstat], subject_regexes: List[str]) -> List[List]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :param subject_regexes: list of regular expression pattern
+    :return: list of [author, non_compliant_commits]
+    """
+    logging.info("counting not compliant subjects by author")
+    numstat = __unique_by(numstat, "hash")
+
+    for subject_regex in subject_regexes:
+        numstat = list(filter(lambda x: len(re.findall(subject_regex, x.subject)) == 0, numstat))
+    not_compliant_subjects_by_author = __count_by_attr(numstat, "author")
+
+    author_non_compliant_commits = list()
+    for author in not_compliant_subjects_by_author.keys():
+        row = [author, not_compliant_subjects_by_author[author]]
+        author_non_compliant_commits.append(row)
+    return sorted(author_non_compliant_commits, key=second_column, reverse=True)
+
+
+def count_reviews(numstat: List[Numstat], reviewer_regex: str) -> Tuple[List[str], List[List]]:
+    """
+    :param numstat: result of :func: git_log_numstat_no_merge
+    :param reviewer_regex: regular expression pattern
+    :return: list of [, author1, author2, ...], [reviewer1, count, count, ...]
+                                                [reviewer2, count, count, ...],
+                                                ...
+    """
+    logging.info("counting reviews (reviewer_regex=%s)" % reviewer_regex)
+
+    authors = set()
+    reviewer_author_reviews = defaultdict(lambda: defaultdict(int))
+
+    numstat = __unique_by(numstat, "hash")
+    for n in numstat:
+        reviewers = re.findall(reviewer_regex, n.subject)
+        for reviewer in reviewers:
+            reviewer = Mailmap.instance().get_by_username(reviewer)
+            reviewer_author_reviews[reviewer][n.author] += 1
+            authors.add(n.author)
+
+    authors = sorted(authors)
+    header = ["    ┌─> author\nreviewer"]
+    header.extend(authors)
+
+    data = list()
+    for reviewer in sorted(reviewer_author_reviews.keys()):
+        data.append([reviewer] + list(map(lambda a: reviewer_author_reviews[reviewer][a], authors)))
+
+    return header, data
+
+
+def __count_by_attr(items: List[Any], attr: str) -> Dict[Any, int]:
+    count_by_attr = defaultdict(int)
+    for item in items:
+        count_by_attr[item[attr]] += 1
+    return count_by_attr
+
+
+def __unique_by(items: List, attr: str) -> List:
+    items_by_attr = dict()
+    for item in items:
+        items_by_attr[item[attr]] = item
+    return list(items_by_attr.values())
