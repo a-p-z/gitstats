@@ -13,15 +13,15 @@ def limit(table: List[List], _limit: int, other=False) -> List[List]:
         return table[:_limit]
 
     a = table[:_limit - 1]
-    b = sum_by_row(table[_limit - 1:])
+    b = sum_by_row(table[_limit - 1:], len(table[0]))
     b[0] = "others"
     return a + [b]
 
 
-def sum_by_row(table: List[List]) -> List:
-    total = [0] * len(table[0])
+def sum_by_row(table: List[List], size: int) -> List:
+    total = [0] * size
     for i in range(len(table)):
-        for j in range(len(total)):
+        for j in range(len(table[i])):
             if isinstance(table[i][j], Number):
                 total[j] += table[i][j]
     return total

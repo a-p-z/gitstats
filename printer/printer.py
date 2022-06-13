@@ -6,17 +6,17 @@ from core.model.blame import Blame
 from core.model.fileType import FileType
 from core.model.numstat import Numstat
 from core.regexes import Regexes
-from core.utilities import replace_author_column, filter_active_authors
-from core.utilities import limit
-from core.utilities import add_percentage_of_changes_column
 from core.utilities import add_impact_commit_column
-from core.utilities import sum_by_row
-from core.utilities import replace_author_row
-from core.utilities import cumulate_rows
+from core.utilities import add_percentage_of_changes_column
 from core.utilities import apply_to_column
 from core.utilities import apply_to_row
+from core.utilities import cumulate_rows
 from core.utilities import group_rows_by_year
+from core.utilities import limit
+from core.utilities import replace_author_column, filter_active_authors
+from core.utilities import replace_author_row
 from core.utilities import sum_by_column
+from core.utilities import sum_by_row
 from printer.confluence import ConfluenceWikiFormatter
 from printer.markdown import MarkdownFormatter
 
@@ -142,10 +142,11 @@ class Printer:
         print(self.__formatter.h2("Cumulated commits over time by author"))
         header, data = gitstatsLib.count_commits_over_month_by_author(numstat)
         header = replace_author_row(header)
-        data_a = data[:-12]
-        data_b = data[-12:]
-        data_a = group_rows_by_year(data_a)
-        data = data_a + data_b
+        if len(data) > 12:
+            data_a = data[:-12]
+            data_b = data[-12:]
+            data_a = group_rows_by_year(data_a)
+            data = data_a + data_b
         cumulate_rows(data)
         print(self.__formatter.chart(header,
                                      data,
@@ -164,10 +165,11 @@ class Printer:
         print(self.__formatter.h2("Impacts over time"))
         header = ("date", "insertions", "deletions")
         data = gitstatsLib.get_impacts_over_month(numstat)
-        data_a = data[:-12]
-        data_b = data[-12:]
-        data_a = group_rows_by_year(data_a)
-        data = data_a + data_b
+        if len(data) > 12:
+            data_a = data[:-12]
+            data_b = data[-12:]
+            data_a = group_rows_by_year(data_a)
+            data = data_a + data_b
         print(self.__formatter.chart(header,
                                      data,
                                      confluence={"type": "area",
@@ -186,10 +188,11 @@ class Printer:
         print(self.__formatter.h2("Commits over time by authors"))
         header, data = gitstatsLib.count_commits_over_month_by_author(numstat)
         header = replace_author_row(header)
-        data_a = data[:-12]
-        data_b = data[-12:]
-        data_a = group_rows_by_year(data_a)
-        data = data_a + data_b
+        if len(data) > 12:
+            data_a = data[:-12]
+            data_b = data[-12:]
+            data_a = group_rows_by_year(data_a)
+            data = data_a + data_b
         print(self.__formatter.chart(header,
                                      data,
                                      confluence={"type": "area",
@@ -221,7 +224,7 @@ class Printer:
         replace_author_column(data)
         data = add_percentage_of_changes_column(data, insertions_index=2, deletions_index=3)
         data = add_impact_commit_column(data, insertions_index=2, deletions_index=3, commits_index=1)
-        total = sum_by_row(data)
+        total = sum_by_row(data, len(header))
         total[0] = "total"
         total[4] = ""
         total[5] = ""
@@ -274,12 +277,13 @@ class Printer:
         filter_active_authors(header, data)
         header = replace_author_row(header)
         replace_author_column(data)
-        total = sum_by_row(data)
+        total = sum_by_row(data, len(header))
         total[0] = "total"
         data.append(total)
         sum_by_column(data)
         header.append("total")
-        data[-1][-1] = ""
+        if len(data) > 0 and len(data[-1]) > 0:
+            data[-1][-1] = ""
         apply_to_column(data, 0, self.__formatter.bold)
         print(self.__formatter.table(header, data, md="|:---|%s|" % "|".join(["---:"] * (len(header) - 1))))
         print(self.__formatter.section())
@@ -295,12 +299,13 @@ class Printer:
         filter_active_authors(header, data)
         header = replace_author_row(header)
         replace_author_column(data)
-        total = sum_by_row(data)
+        total = sum_by_row(data, len(header))
         total[0] = "total"
         data.append(total)
         sum_by_column(data)
         header.append("total")
-        data[-1][-1] = ""
+        if len(data) > 0 and len(data[-1]) > 0:
+            data[-1][-1] = ""
         apply_to_column(data, 0, self.__formatter.bold)
         print(self.__formatter.table(header, data, md="|:---|%s|" % "|".join(["---:"] * (len(header) - 1))))
         print(self.__formatter.section())
@@ -377,7 +382,7 @@ class Printer:
                                                                                FileType.JAVASCRIPT,
                                                                                FileType.TYPESCRIPT])
         replace_author_column(data)
-        total = sum_by_row(data)
+        total = sum_by_row(data, len(header))
         total[0] = self.__formatter.bold("total")
         total[1] = self.__formatter.bold(total[1])
         total[2] = ""
