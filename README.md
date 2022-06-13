@@ -1,18 +1,19 @@
 # gitstats
 **gitstats** is a simple statistical analysis tool for git repositories written in python.
 It analyzes the history of the repository and shows general statistics per author.
-It was purely developed for fun and to create a little friendly competition among team members.
-Furthermore, it calculates interesting timeline analysis and reports code changes over time for a high level overview over the repository.
+It was purely developed for fun, to create a little friendly competition among team members.
+Nevertheless, it calculates interesting timeline analysis and reports code changes over time for a high level overview over the repository.
 
-### Execution
-gitstats can be executed running the command ``gitstats.py`` in the repository directory.
+## Example outputs
+**gitstats** is based on templates which can be customized according to your needs.
+
+### Markdown
+Move to your project directory and execute **gitstats** with Markdown format:
 ```sh
 $ cd $PROJECT_DIRECTORY
 $ $GITSTATS_DIRECTORY/gitstats.py --format markdown > gitstats.md
 ```
-## Example outputs
-**gitstats** is based on templates which you can customize your output
-### Markdown
+Open the output file `gitstats.md` with a markdown viewer.
 #### CUMULATED COMMITS OVER TIME BY AUTHOR
 |date|Romolo|Numa Pompilio|Tullo Ostilio|Anco Marzio|Tarquinio Prisco|Servio Tullio|Tarquinio il Superbo|
 |---|---|---|---|---|---|---|---|
@@ -51,12 +52,21 @@ $ $GITSTATS_DIRECTORY/gitstats.py --format markdown > gitstats.md
 
 [...]
 
-### Confluence wiki
-Pages in [Confluence](https://www.atlassian.com/software/confluence) can be created with wiki markup. Using this mode **gitstats** prepares a content using that you can easily insert in the editor:
+### [Confluence](https://www.atlassian.com/software/confluence) wiki
+Move to your project directory and execute **gitstats** with confluencewiki format:
+>-[ ] TODO: implement a client to directly create/modify the page
+
+```sh
+$ cd $PROJECT_DIRECTORY
+$ $GITSTATS_DIRECTORY/gitstats.py --format confluencewiki > confluencewiki.txt
+```
+
+Copy the content of `confluencewiki.txt` in a Confluence page:
 1. Choose **Insert** > **Markup**
 2. Select **Confluence wiki**
 3. Paste your text - the preview will show you how it will appear on your page
 4. Choose **Insert**
+> See [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html)
 
 ![cumulated commits over time by authors](images/01-cumulatedCommitsOverTimeByAuthors.png?raw=true "Cumulated commits over time by authors")
 ![impacts over time](images/02-impactsOverTime.png?raw=true "Impacts over time")
@@ -64,9 +74,6 @@ Pages in [Confluence](https://www.atlassian.com/software/confluence) can be crea
 ![commits by author](images/04-commitsByAuthor.png?raw=true "Commits by author")
 ![files by extension](images/05-filesByExtension.png?raw=true "Files by extension")
 ![edited lines of code by author](images/06-editedLinesOfCodeByAuthor.png?raw=true "Edited lines of code by author")
-
-See [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html)
-TODO: create a client to directly create the page
 
 ## Some features
 - Cumulated commits over time by author
@@ -82,6 +89,11 @@ TODO: create a client to directly create the page
 - Edited lines of code by author
 - Most impactful commits
 - Other statistics (global and of the month)
+
+## Resources
+The `resources` directory contains two template you can use to define your own mail mapping and regexes:
+- in `mailmap.yaml` you can link multiple emails to the same author
+- `regexes.yaml` contains the regexes used to check the subject of the commit is compliant and to extract the reviewers  
 
 ## Requirements
 - Git
