@@ -11,7 +11,7 @@ Nevertheless, it calculates interesting timeline analysis and reports code chang
 Move to your project directory and execute **gitstats** with Markdown format:
 ```sh
 $ cd $PROJECT_DIRECTORY
-$ $GITSTATS_DIRECTORY/gitstats.py --format markdown > gitstats.md
+$ $GITSTATS_DIRECTORY/gitstats.py --format markdown
 ```
 Open the output file `gitstats.md` with a markdown viewer.
 #### CUMULATED COMMITS OVER TIME BY AUTHOR
@@ -58,10 +58,10 @@ Move to your project directory and execute **gitstats** with confluencewiki form
 
 ```sh
 $ cd $PROJECT_DIRECTORY
-$ $GITSTATS_DIRECTORY/gitstats.py --format confluencewiki > confluencewiki.txt
+$ $GITSTATS_DIRECTORY/gitstats.py --format confluencewiki
 ```
 
-Copy the content of `confluencewiki.txt` in a Confluence page:
+Copy the content of `gitstats.confluencewiki.txt` in a Confluence page:
 1. Choose **Insert** > **Markup**
 2. Select **Confluence wiki**
 3. Paste your text - the preview will show you how it will appear on your page
