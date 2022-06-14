@@ -29,6 +29,7 @@ if __name__ == "__main__":
         parser.exit(1, args.format + "is not supported")
         raise Exception(args.format + "is not supported")
 
+    gitlog.git_log_numstat_merges(args.load)
     numstat: List[Numstat] = gitlog.git_log_numstat_no_merges(args.load)
     files = gitls.git_ls_files()
     blame: List[Blame] = gitblame.git_blame(files, args.load)

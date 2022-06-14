@@ -7,6 +7,11 @@ from core.model.blame import Blame
 from core.model.numstat import Numstat
 
 
+def load_numstat_merges() -> List[Numstat]:
+    Mailmap.instance().authors_by_email = __load("authors_by_email.pkl")
+    return __load("numstat_merges.pkl")
+
+
 def load_numstat() -> List[Numstat]:
     Mailmap.instance().authors_by_email = __load("authors_by_email.pkl")
     return __load("numstat.pkl")
@@ -14,6 +19,11 @@ def load_numstat() -> List[Numstat]:
 
 def load_blame() -> List[Blame]:
     return __load("blame.pkl")
+
+
+def dump_numstat_merges(numstat: List[Numstat]):
+    __dump(numstat, "numstat_merges.pkl")
+    __dump(Mailmap.instance().authors_by_email, "authors_by_email.pkl")
 
 
 def dump_numstat(numstat: List[Numstat]):
