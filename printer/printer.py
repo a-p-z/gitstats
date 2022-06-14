@@ -207,8 +207,7 @@ class Printer:
     def __print_cemetery(self):
         print(self.__formatter.section())
         print(self.__formatter.h2("Cemetery (it happens to the best of us: authors not active for over a year)"))
-        dead = sorted(set(filter(lambda x: not x.is_active(), Mailmap.instance().authors_by_email.values())),
-                      key=lambda d: d.end)
+        dead = sorted(filter(lambda x: not x.is_active(), Mailmap.instance().get_all()), key=lambda d: d.end)
         header = replace_author_row(dead)
         data = list(map(lambda d: "%s - %s" % (d.start.strftime("%d/%m/%Y"), d.end.strftime("%d/%m/%Y")), dead))
         print(self.__formatter.table(header, [data], md="|%s|" % "|".join([":---:"] * len(header))))  # gravestone

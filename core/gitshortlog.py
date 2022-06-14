@@ -46,6 +46,6 @@ def __raw_short_log_to_short_log(short_log_match) -> Dict:
     name = short_log_match.group(2)
     email = short_log_match.group(3).lower()
     commits = int(short_log_match.group(1))
-    author = Mailmap.get_or_default(name, email)
+    author = Mailmap.instance().get(name, email)
     return {"author": author, "commits": commits}
 

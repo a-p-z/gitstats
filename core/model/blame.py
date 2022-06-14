@@ -20,26 +20,26 @@ class Blame:
     @staticmethod
     def of(raw_git_blame):
         _hash = None
-        author = Author("", "", "")
-        committer = Author("", "", "")
         summary = None
         filename = None
         content = None
+        author_name = None
+        author_email = None
+        committer_name = None
+        committer_email = None
 
         for line in raw_git_blame.split("\n"):
-            if line.startswith("author ") and len(author.name) == 0:
-                author.name = line[7:]
+            if line.startswith("author "):
+                author_name = line[7:]
 
-            elif line.startswith("author-mail ") and len(author.email) == 0:
-                email = line[13:-1].lower()
-                author = Mailmap.get_or_default(author.name, email)
+            elif line.startswith("author-mail "):
+                author_email = line[13:-1].lower()
 
-            elif line.startswith("committer ") and len(committer.name) == 0:
-                committer.name = line[10:]
+            elif line.startswith("committer "):
+                committer_name = line[10:]
 
-            elif line.startswith("committer-mail ") and len(committer.email) == 0:
-                email = line[16:-1].lower()
-                committer.email = Mailmap.get_or_default(committer.name, email)
+            elif line.startswith("committer-mail "):
+                committer_email = line[16:-1].lower()
 
             elif line.startswith("summary "):
                 summary = line[8:]
@@ -53,6 +53,8 @@ class Blame:
             elif re.match(r".{,40} \d+ \d+", line):
                 _hash = line[:40]
 
+        author = Mailmap.instance().get(author_name, author_email)
+        committer = Mailmap.instance().get(committer_name, committer_email)
         return Blame(_hash, author, committer, summary, filename, content)
 
     def is_valid(self):

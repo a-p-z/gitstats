@@ -25,5 +25,5 @@ def raw_line_to_ref(line: str) -> List:
     name = raw_ref[1]
     email = raw_ref[2][1:-1]
     branch = raw_ref[3]
-    author = Mailmap.get_or_default(name, email)
+    author = Mailmap.instance().get(name, email)
     return [date, author, branch]

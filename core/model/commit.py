@@ -28,8 +28,8 @@ class Commit:
         _hash = log_list[0]
         subject = log_list[2]
         date = datetime.strptime(log_list[1][:-6], "%Y-%m-%dT%H:%M:%S")
-        author = Mailmap.get_or_default(log_list[3], log_list[4], date)
-        committer = Mailmap.get_or_default(log_list[5], log_list[6])
+        author = Mailmap.instance().get(log_list[3], log_list[4], date)
+        committer = Mailmap.instance().get(log_list[5], log_list[6])
         diffstats = [Diffstat.of(diffstat) for diffstat in log_list[8:-1]]
         return Commit(_hash, subject, author, committer, date, diffstats)
 

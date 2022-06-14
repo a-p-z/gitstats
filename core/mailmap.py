@@ -1,6 +1,8 @@
+from __future__ import annotations
 import logging
 import os
-from typing import Dict
+from datetime import datetime
+from typing import Dict, Set
 
 import yaml
 
@@ -11,42 +13,34 @@ class Mailmap:
     _instance = None
 
     def __init__(self):
-        self.authors_by_email = Mailmap.__authors_by_email()
+        self.__authors = Mailmap.__load_authors_from_mailmap_yaml()
 
-    def register_active_date(self, author, date):
-        if not date:
-            return
-        for a in filter(lambda x: x == author, self.authors_by_email.values()):
-            a.register_active_date(date)
-
-    def get_by_username(self, username, date=None):
-        authors = list(filter(lambda x: x.username == username, self.authors_by_email.values()))
-        if len(authors) == 0:
-            logging.warning("%s not found in mailmap.yaml", username)
-            authors.append(Author(username, username, username))
-            Mailmap.instance().authors_by_email[username] = Author(username, username, username)
-        author = Mailmap.instance().authors_by_email.get(authors[0].email)
-        Mailmap.instance().register_active_date(author, date)
-        return author
-
-    @staticmethod
-    def get_or_default(name, email, date=None):
+    def get(self, name, email, date=None) -> Author:
         email = email.lower()
-        if email not in Mailmap.instance().authors_by_email.keys():
+        if email not in self.__authors.keys():
             logging.warning("%s not found in mailmap.yaml", email)
-            Mailmap.instance().authors_by_email[email] = Author(name, email)
-        author = Mailmap.instance().authors_by_email.get(email)
-        Mailmap.instance().register_active_date(author, date)
+            return self.__add(name, email)
+        author = self.__authors.get(email)
+        self.__register_active_date(author, date)
         return author
 
+    def get_all(self) -> Set[Author]:
+        return set(self.__authors.values())
+
+    def get_dict(self) -> Dict[str, Author]:
+        return self.__authors
+
+    def set_dict(self, authors):
+        self.__authors = authors
+
     @staticmethod
-    def instance():
+    def instance() -> Mailmap:
         if not Mailmap._instance:
             Mailmap._instance = Mailmap()
         return Mailmap._instance
 
     @staticmethod
-    def __authors_by_email() -> Dict[str, Author]:
+    def __load_authors_from_mailmap_yaml() -> Dict[str, Author]:
         script_dir = os.path.dirname(__file__)
         mailmap_yaml = os.path.join(script_dir, r"../resources/mailmap.yaml")
         if not os.path.isfile(mailmap_yaml):
@@ -55,11 +49,27 @@ class Mailmap:
             # The FullLoader parameter handles the conversion from YAML
             # scalar values to Python the dictionary format
             mailmap = yaml.load(file, Loader=yaml.FullLoader)
-            _authors_by_email: Dict[str, Author] = dict()
+            authors: Dict[str, Author] = dict()
             for username in mailmap.keys():
                 name = mailmap[username]["name"]
                 email = mailmap[username]["email"]
-                _authors_by_email[email] = Author(name, email, username)
+                author = Author(name, email, username)
+                authors[email] = author
+                authors[username] = author
                 for alias in mailmap[username].get("aliases", []):
-                    _authors_by_email[alias] = Author(name, email, username)
-            return _authors_by_email
+                    authors[alias] = author
+            return authors
+
+    def __register_active_date(self, _author, date):
+        if not date:
+            return
+        for author in self.__authors.values():
+            if author == _author:
+                author.register_active_date(date)
+
+    def __add(self, name: str, email: str, username: str = None, date: datetime = None) -> Author:
+        author = Author(name, email, username)
+        author.register_active_date(date)
+        self.__authors[email] = author
+        self.__authors[username] = author
+        return author

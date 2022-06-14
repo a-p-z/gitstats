@@ -39,13 +39,13 @@ def count_commits_on_behalf_of(numstat: List[Numstat]) -> Tuple[List, List[List]
     :return: list of [committer, commits, author]
     """
     logging.info("counting commits and on behalf of")
-    commits_and_impacts_by_author = defaultdict(lambda: defaultdict(int))
+    commits_on_behalf_of = defaultdict(lambda: defaultdict(int))
 
     numstat = __unique_by(numstat, "hash")
     numstat = filter(lambda x: x.author != x.committer, numstat)
     authors = set()
     for n in numstat:
-        commits_and_impacts_by_author[n.committer][n.author] += 1
+        commits_on_behalf_of[n.committer][n.author] += 1
         authors.add(n.author)
 
     authors = sorted(authors)
@@ -53,8 +53,8 @@ def count_commits_on_behalf_of(numstat: List[Numstat]) -> Tuple[List, List[List]
     header.extend(authors)
 
     data = list()
-    for committer in sorted(commits_and_impacts_by_author.keys()):
-        data.append([committer] + list(map(lambda author: commits_and_impacts_by_author[committer][author], authors)))
+    for committer in sorted(commits_on_behalf_of.keys()):
+        data.append([committer] + list(map(lambda author: commits_on_behalf_of[committer][author], authors)))
 
     return header, data
 
@@ -298,7 +298,7 @@ def count_reviews(numstat: List[Numstat], reviewer_regex: str) -> Tuple[List[str
     for n in numstat:
         reviewers = re.findall(reviewer_regex, n.subject)
         for reviewer in reviewers:
-            reviewer = Mailmap.instance().get_by_username(reviewer)
+            reviewer = Mailmap.instance().get(reviewer, reviewer, n.date)
             reviewer_author_reviews[reviewer][n.author] += 1
             authors.add(n.author)
 
