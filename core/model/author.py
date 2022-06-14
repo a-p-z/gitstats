@@ -17,6 +17,8 @@ class Author:
         self.end = max(date, self.end)
 
     def is_active(self):
+        if self.end == datetime.min:
+            return True
         return (datetime.now() - self.end).days <= 30
 
     def __str__(self):
