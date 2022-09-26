@@ -14,10 +14,13 @@ class Commit:
                  author: Author,
                  committer: Author,
                  date: datetime,
-                 diffstats: List[Diffstat]):
+                 diffstats: List[Diffstat],
+                 email: str = "EMAIL PLACEHOLDER"
+                 ):
         self.hash = _hash
         self.subject = subject
         self.author = author
+        self.email = email
         self.committer = committer
         self.date = date
         self.diffstats = diffstats
@@ -31,7 +34,7 @@ class Commit:
         author = Mailmap.instance().get(log_list[3], log_list[4], date)
         committer = Mailmap.instance().get(log_list[5], log_list[6])
         diffstats = [Diffstat.of(diffstat) for diffstat in log_list[8:-1]]
-        return Commit(_hash, subject, author, committer, date, diffstats)
+        return Commit(_hash, subject, author, committer, date, diffstats, email=log_list[4])
 
     def __hash__(self):
         return self.hash

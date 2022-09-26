@@ -12,6 +12,7 @@ class Numstat:
                  date: datetime,
                  subject: str,
                  author: Author,
+                 email: str,
                  committer: Author,
                  file: str,
                  insertions: int,
@@ -20,6 +21,7 @@ class Numstat:
         self.date = date
         self.subject = subject
         self.author = author
+        self.email = email
         self.committer = committer
         self.file = file
         self.insertions = insertions
@@ -34,6 +36,7 @@ class Numstat:
                        commit.date,
                        commit.subject,
                        commit.author,
+                       commit.email,
                        commit.committer,
                        diffstat.file,
                        diffstat.insertions,

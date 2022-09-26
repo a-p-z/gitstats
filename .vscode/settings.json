@@ -1,0 +1,17 @@
+{
+    "launch": {
+        "configurations": [
+            {
+                "name": "gitstats",
+                "type": "python",
+                "request": "launch",
+                "cwd": "/Users/tiagaoalb/conteudo-modular-desenvolvimento-web",
+                "program": "/Users/tiagaoalb/gitstats/gitstats.py",
+                "args": [
+                    "--format=markdown"
+                ]
+            }
+        ],
+        "compounds": []
+    }
+}

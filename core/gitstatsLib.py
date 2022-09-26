@@ -18,17 +18,23 @@ def count_commits_and_impacts_by_author(numstat: List[Numstat]) -> List[List]:
     :return: list of [author, commits, insertions, deletions]
     """
     logging.info("counting commits and impacts by author")
+    email_by_author = {
+        x.author: x.email for x in numstat 
+    }
     insertions_by_author = aggregate_and_sum(numstat, "author", "insertions")
     deletions_by_author = aggregate_and_sum(numstat, "author", "deletions")
     numstat = __unique_by(numstat, "hash")
     commits_by_author = __count_by_attr(numstat, "author")
+    # email_by_author = __unique_by(numstat, "author")
+
 
     author_commits_insertions_deletions = list()
     for author in sorted(insertions_by_author.keys()):
+        email = email_by_author[author]
         commits = commits_by_author[author]
         insertions = insertions_by_author[author]
         deletions = deletions_by_author[author]
-        author_commits_insertions_deletions.append([author, commits, insertions, deletions])
+        author_commits_insertions_deletions.append([author, commits, insertions, deletions, email])
 
     return sorted(author_commits_insertions_deletions, key=second_column, reverse=True)
 

@@ -64,30 +64,35 @@ class Printer:
         print(self.__formatter.sep(), file=self.__file)
 
         self.__print_other([
-            ["MavenMAN",
-             "with %d edited lines in pom.xml  \nfollowed by %s with %d eloc and %s with %d eloc",
-             gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.POM_XML])],
+            # ["MavenMAN",
+            #  "with %d edited lines in pom.xml  \nfollowed by %s with %d eloc and %s with %d eloc",
+            #  gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.POM_XML])],
 
-            ["SwaggerSTAR",
-             "with %d edited lines in swagger.yml files  \n followed by %s with %d eloc and %s with %d eloc",
-             gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.SWAGGER_YML])],
+            # ["SwaggerSTAR",
+            #  "with %d edited lines in swagger.yml files  \n followed by %s with %d eloc and %s with %d eloc",
+            #  gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.SWAGGER_YML])],
 
             ["Destroyer",
              "with a mean of %d deletions for commit (only sources)  \nfollowed by %s with %d eloc and %s with %d eloc",
              gitstatsLib.count_deletion_ratio_by_author(numstat,
                                                         [FileType.JAVA,
-                                                         FileType.GROOVY,
-                                                         FileType.KOTLIN,
                                                          FileType.JAVASCRIPT,
-                                                         FileType.TYPESCRIPT])],
+                                                         FileType.TYPESCRIPT,
+                                                         FileType.MARKDOWN,
+                                                         FileType.SQL,
+                                                         FileType.JSON,
+                                                         FileType.CSS,
+                                                         FileType.HTML,
+                                                         FileType.PYTHON,
+                                                         FileType.CSHARP])],
 
-            ["Groovyer",
-             "with %d edited lines in groovy files (only sources)  \nfollowed by %s with %d eloc and %s with %d eloc",
-             gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.GROOVY])],
+            # ["Groovyer",
+            #  "with %d edited lines in groovy files (only sources)  \nfollowed by %s with %d eloc and %s with %d eloc",
+            #  gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.GROOVY])],
 
-            ["Kotlin Star",
-             "with %d edited lines in kotlin files (only sources)  \nfollowed by %s with %d eloc and %s with %d eloc",
-             gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.KOTLIN])],
+            # ["Kotlin Star",
+            #  "with %d edited lines in kotlin files (only sources)  \nfollowed by %s with %d eloc and %s with %d eloc",
+            #  gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.KOTLIN])],
 
             ["Tester",
              "with %d edited lines in tests  \nfollowed by %s with %d eloc and %s with %d eloc",
@@ -110,24 +115,34 @@ class Printer:
             ["Fake Developer",
              "with %d empty lines (only sources)  \nfollowed by %s with %d empty lines and %s with %d empty lines",
              gitstatsLib.count_empty_lines_of_code_by_author(blame,
-                                                             [FileType.JAVA,
-                                                              FileType.GROOVY,
-                                                              FileType.KOTLIN,
-                                                              FileType.JAVASCRIPT,
-                                                              FileType.TYPESCRIPT])],
+                                                                [FileType.JAVA,
+                                                                FileType.JAVASCRIPT,
+                                                                FileType.TYPESCRIPT,
+                                                                FileType.MARKDOWN,
+                                                                FileType.SQL,
+                                                                FileType.JSON,
+                                                                FileType.CSS,
+                                                                FileType.HTML,
+                                                                FileType.PYTHON,
+                                                                FileType.CSHARP])],
 
-            ["Functional Developer",
-             "with %d lambda definitions (only JAVA sources)  \nfollowed by %s with %d lambdas and %s with %d lambdas",
-             gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.JAVA], r".*->|.*::")],
+            # ["Functional Developer",
+            #  "with %d lambda definitions (only JAVA sources)  \nfollowed by %s with %d lambdas and %s with %d lambdas",
+            #  gitstatsLib.count_edited_lines_of_code_by_author(blame, [FileType.JAVA], r".*->|.*::")],
 
             ["Conditional Developer",
              "with %d if conditions created (only sources)  \nfollowed by %s with %d ifs and %s with %d ifs",
              gitstatsLib.count_edited_lines_of_code_by_author(blame,
                                                               [FileType.JAVA,
-                                                               FileType.GROOVY,
-                                                               FileType.KOTLIN,
-                                                               FileType.JAVASCRIPT,
-                                                               FileType.TYPESCRIPT],
+                                                                FileType.JAVASCRIPT,
+                                                                FileType.TYPESCRIPT,
+                                                                FileType.MARKDOWN,
+                                                                FileType.SQL,
+                                                                FileType.JSON,
+                                                                FileType.CSS,
+                                                                FileType.HTML,
+                                                                FileType.PYTHON,
+                                                                FileType.CSHARP],
                                                               r".*if")],
             ["DBA",
              "with %d edited lines in SQL files  \nfollowed by %s with %d eloc and %s with %d eloc",
@@ -228,8 +243,9 @@ class Printer:
         print(self.__formatter.h2("Commits by Author"), file=self.__file)
         print(self.__formatter.column(), file=self.__file)
         # TODO add star
-        header = ("author", "commits", "insertions", "deletions", "% of changes", "impact/commit")
+        header = ("author", "commits", "insertions", "deletions", "email", "% of changes", "impact/commit")
         data = gitstatsLib.count_commits_and_impacts_by_author(numstat)
+        print(data)
         replace_author_column(data)
         data = add_percentage_of_changes_column(data, insertions_index=2, deletions_index=3)
         data = add_impact_commit_column(data, insertions_index=2, deletions_index=3, commits_index=1)
@@ -239,7 +255,7 @@ class Printer:
         total[5] = ""
         data.append(total)
         apply_to_row(data, -1, self.__formatter.bold)
-        print(self.__formatter.table(header, data, md="|:---|---:|---:|---:|---:|---:|"), file=self.__file)
+        print(self.__formatter.table(header, data, md="|:---|---:|---:|---:|---:|---:|---:|"), file=self.__file)
         print(self.__formatter.column(), file=self.__file)
 
         print(self.__formatter.column(), file=self.__file)
@@ -391,11 +407,16 @@ class Printer:
         # TODO add star
         data = gitstatsLib.count_edited_lines_of_code_and_stability_by_author(numstat,
                                                                               blame,
-                                                                              [FileType.JAVA,
-                                                                               FileType.GROOVY,
-                                                                               FileType.KOTLIN,
-                                                                               FileType.JAVASCRIPT,
-                                                                               FileType.TYPESCRIPT])
+                                                                                [FileType.JAVA,
+                                                                                FileType.JAVASCRIPT,
+                                                                                FileType.TYPESCRIPT,
+                                                                                FileType.MARKDOWN,
+                                                                                FileType.SQL,
+                                                                                FileType.JSON,
+                                                                                FileType.CSS,
+                                                                                FileType.HTML,
+                                                                                FileType.PYTHON,
+                                                                                FileType.CSHARP])
         replace_author_column(data)
         total = sum_by_row(data, len(header))
         total[0] = self.__formatter.bold("total")
@@ -409,10 +430,15 @@ class Printer:
         header = ("author", "edited line of code")
         data = gitstatsLib.count_edited_lines_of_code_by_author(blame,
                                                                 [FileType.JAVA,
-                                                                 FileType.GROOVY,
-                                                                 FileType.KOTLIN,
-                                                                 FileType.JAVASCRIPT,
-                                                                 FileType.TYPESCRIPT])
+                                                                FileType.JAVASCRIPT,
+                                                                FileType.TYPESCRIPT,
+                                                                FileType.MARKDOWN,
+                                                                FileType.SQL,
+                                                                FileType.JSON,
+                                                                FileType.CSS,
+                                                                FileType.HTML,
+                                                                FileType.PYTHON,
+                                                                FileType.CSHARP])
         replace_author_column(data)
         data = limit(data, 8, True)
         print(self.__formatter.chart(header,

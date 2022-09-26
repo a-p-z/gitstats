@@ -19,6 +19,10 @@ class FileType(Enum):
     SQL = ".sql"
     POM_XML = "pom.xml"
     SWAGGER_YML = "swagger.yml"
+    MARKDOWN = ".md"
+    HTML = ".html"
+    PYTHON = ".py"
+    CSHARP = ".cs"
 
     def match(self, file: str) -> bool:
         if self == self.JAVA:
@@ -81,6 +85,18 @@ class FileType(Enum):
         elif self == self.SWAGGER_YML:
             return file.endswith("swagger.yml")
 
+        elif self == self.MARKDOWN:
+            return file.endswith(".md")
+
+        elif self == self.HTML:
+            return file.endswith(".html")
+
+        elif self == self.PYTHON:
+            return file.endswith(".py")
+
+        elif self == self.CSHARP:
+            return file.endswith(".cs")
+
     def __str__(self):
         return self.name
 
@@ -102,7 +118,11 @@ class FileType(Enum):
             FileType.JSON,
             FileType.SQL,
             FileType.POM_XML,
-            FileType.SWAGGER_YML]
+            FileType.SWAGGER_YML,
+            FileType.MARKDOWN,
+            FileType.HTML,
+            FileType.PYTHON,
+            FileType.CSHARP]
 
     @staticmethod
     def any_match(file_types: List, file: str) -> bool:
