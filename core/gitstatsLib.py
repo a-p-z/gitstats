@@ -174,7 +174,10 @@ def count_edited_lines_of_code_and_stability_by_author(numstat: List[Numstat],
     for author in insertions_by_author.keys():
         eloc = edited_lines_of_code_by_author[author]
         insertions = insertions_by_author[author]
-        stability = float("{:.2f}".format(100 * eloc / insertions))
+        try:
+            stability = float("{:.2f}".format(100 * eloc / insertions))
+        except ZeroDivisionError:
+            stability = 100.00
         author_eloc_stability.append([author, eloc, stability])
     return sorted(author_eloc_stability, key=second_column, reverse=True)
 
