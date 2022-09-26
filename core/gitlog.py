@@ -7,13 +7,13 @@ from core.model.diffstat import Diffstat
 from core.model.numstat import Numstat
 
 GIT_LOG_NUMSTAT_NO_MERGES = "git log" \
-                            " --pretty=tformat:'.:*-*:.%n%h%n%fI%n%s%n%aN%n%aE%n%cN%n%cE'" \
+                            " --pretty=tformat:'.:*-*:.%n%h%n%aI%n%f%n%aN%n%aE%n%cN%n%cE'" \
                             " --numstat" \
                             " --no-merges" \
                             " --date=iso8601"
 
 GIT_LOG_NUMSTAT_MERGES = "git log" \
-                            " --pretty=tformat:'.:*-*:.%n%h%n%fI%n%s%n%aN%n%aE%n%cN%n%cE'" \
+                            " --pretty=tformat:'.:*-*:.%n%h%n%aI%n%f%n%aN%n%aE%n%cN%n%cE'" \
                             " --numstat" \
                             " --merges" \
                             " --date=iso8601"
