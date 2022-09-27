@@ -336,7 +336,6 @@ class Printer:
             "total de mudanças / commits",
         )
         data = gitstatsLib.count_commits_and_impacts_by_author(numstat)
-        print(data)
         replace_author_column(data)
         data = add_percentage_of_changes_column(
             data, insertions_index=2, deletions_index=3
