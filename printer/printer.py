@@ -328,10 +328,10 @@ class Printer:
         # TODO add star
         header = (
             "autoria",
+            "email",
             "commits",
             "inserções",
             "remoções",
-            "email",
             "percentual de mudanças",
             "total de mudanças / commits",
         )
@@ -349,6 +349,20 @@ class Printer:
         total[5] = ""
         data.append(total)
         apply_to_row(data, -1, self.__formatter.bold)
+
+        # ? Coloca email como segunda coluna
+        data = [
+            [
+                element[0],
+                element[4],
+                element[1],
+                element[2],
+                element[3],
+                element[5],
+                element[6],
+            ]
+            for element in data
+        ]
         print(
             self.__formatter.table(
                 header, data, md="|:---|---:|---:|---:|---:|---:|---:|"
