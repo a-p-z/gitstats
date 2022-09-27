@@ -31,9 +31,11 @@ if __name__ == "__main__":
 
     gitlog.git_log_numstat_merges(args.load)
     numstat: List[Numstat] = gitlog.git_log_numstat_no_merges(args.load)
+    gitlog.git_log_numstat_merges_date(args.load)
+    numstat_date: List[Numstat] = gitlog.git_log_numstat_no_merges_date(args.load)
     files = gitls.git_ls_files()
     blame: List[Blame] = gitblame.git_blame(files, args.load)
 
-    printer.print(numstat, blame)
+    printer.print(numstat, numstat_date, blame)
     logging.info("--- %s seconds ---" % (time.process_time() - start_time))
 

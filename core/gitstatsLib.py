@@ -15,7 +15,7 @@ from core.utilities import second_column, aggregate_and_sum, first_column
 def count_commits_and_impacts_by_author(numstat: List[Numstat]) -> List[List]:
     """
     :param numstat: result of :func: git_log_numstat_no_merge
-    :return: list of [author, commits, insertions, deletions]
+    :return: list of [author, email, commits, insertions, deletions]
     """
     logging.info("counting commits and impacts by author")
     email_by_author = {
@@ -25,7 +25,32 @@ def count_commits_and_impacts_by_author(numstat: List[Numstat]) -> List[List]:
     deletions_by_author = aggregate_and_sum(numstat, "author", "deletions")
     numstat = __unique_by(numstat, "hash")
     commits_by_author = __count_by_attr(numstat, "author")
-    # email_by_author = __unique_by(numstat, "author")
+
+
+    author_commits_insertions_deletions = list()
+    for author in sorted(insertions_by_author.keys()):
+        email = email_by_author[author]
+        commits = commits_by_author[author]
+        insertions = insertions_by_author[author]
+        deletions = deletions_by_author[author]
+        author_commits_insertions_deletions.append([author, commits, insertions, deletions, email])
+
+    return sorted(author_commits_insertions_deletions, key=second_column, reverse=True)
+
+
+def count_commits_and_impacts_by_author_and_date(numstat_date: List[Numstat]) -> List[List]:
+    """
+    :param numstat_date: result of :func: git_log_numstat_no_merge_date
+    :return: list of [author, emails, commits, insertions, deletions]
+    """
+    logging.info("counting commits and impacts by author and date")
+    email_by_author = {
+        x.author: x.email for x in numstat_date 
+    }
+    insertions_by_author = aggregate_and_sum(numstat_date, "author", "insertions")
+    deletions_by_author = aggregate_and_sum(numstat_date, "author", "deletions")
+    numstat_date = __unique_by(numstat_date, "hash")
+    commits_by_author = __count_by_attr(numstat_date, "author")
 
 
     author_commits_insertions_deletions = list()

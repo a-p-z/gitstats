@@ -38,7 +38,7 @@ class Printer:
             else open("gitstats.md", "w")
         )
 
-    def print(self, numstat: List[Numstat], blame: List[Blame]):
+    def print(self, numstat: List[Numstat], numstat_date: List[Numstat], blame: List[Blame]):
         self.__print_cumulated_commits_over_time_by_author(numstat)
         print(self.__formatter.sep(), file=self.__file)
 
@@ -52,6 +52,9 @@ class Printer:
         print(self.__formatter.sep(), file=self.__file)
 
         self.__print_commits_and_impacts_by_author(numstat)
+        print(self.__formatter.sep(), file=self.__file)
+
+        self.__print_commits_and_impacts_by_author_and_date(numstat_date)
         print(self.__formatter.sep(), file=self.__file)
 
         self.__print_commits_by_committer(numstat)
@@ -323,7 +326,7 @@ class Printer:
 
     def __print_commits_and_impacts_by_author(self, numstat):
         print(self.__formatter.section(), file=self.__file)
-        print(self.__formatter.h2("Commits por pessoa"), file=self.__file)
+        print(self.__formatter.h2("Commits por pessoa desde 2019"), file=self.__file)
         print(self.__formatter.column(), file=self.__file)
         # TODO add star
         header = (
@@ -374,6 +377,108 @@ class Printer:
         print(self.__formatter.column(), file=self.__file)
         header = ("autoria", "commits")
         data = gitshortlog.count_commits_by_author()
+        replace_author_column(data)
+        data = limit(data, 8, True)
+        print(
+            self.__formatter.chart(
+                header,
+                data,
+                confluence={
+                    "type": "pie",
+                    "legend": False,
+                    "dataOrientation": "vertical",
+                    "width": 480,
+                    "height": 340,
+                    "opacity": 90,
+                },
+                md="|:---|---:|",
+            ),
+            file=self.__file,
+        )
+        print(self.__formatter.column(), file=self.__file)
+
+        subject_regexes = Regexes.instance().subject_regexes
+        if len(subject_regexes) > 0:
+            header = ("autoria", "commits")
+            data = gitstatsLib.count_not_compliant_subjects_by_author(
+                numstat, subject_regexes
+            )
+            data = list(filter(lambda x: x[0].is_active(), data))
+            replace_author_column(data)
+            print(
+                self.__formatter.chart(
+                    header,
+                    data,
+                    confluence={
+                        "type": "bar",
+                        "orientation": "horizontal",
+                        "dataOrientation": "vertical",
+                        "legend": False,
+                        "width": 480,
+                        "height": 340,
+                        "opacity": 90,
+                        "title": "Commits sem tickets de referência",
+                        "subTitle": "somente pessoas revisoras/autoras ativas",
+                    },
+                    md="|:---|---:|",
+                ),
+                file=self.__file,
+            )
+        print(self.__formatter.section(), file=self.__file)
+
+    def __print_commits_and_impacts_by_author_and_date(self, numstat):
+        print(self.__formatter.section(), file=self.__file)
+        print(self.__formatter.h2("Commits por pessoa no ano de 2022"), file=self.__file)
+        print(self.__formatter.column(), file=self.__file)
+        # TODO add star
+        header = (
+            "autoria",
+            "email",
+            "commits",
+            "inserções",
+            "remoções",
+            "percentual de mudanças",
+            "total de mudanças / commits",
+        )
+        data = gitstatsLib.count_commits_and_impacts_by_author_and_date(numstat)
+        replace_author_column(data)
+        data = add_percentage_of_changes_column(
+            data, insertions_index=2, deletions_index=3
+        )
+        data = add_impact_commit_column(
+            data, insertions_index=2, deletions_index=3, commits_index=1
+        )
+        total = sum_by_row(data, len(header))
+        total[0] = "total"
+        total[4] = ""
+        total[5] = ""
+        data.append(total)
+        apply_to_row(data, -1, self.__formatter.bold)
+
+        # ? Coloca email como segunda coluna
+        data = [
+            [
+                element[0],
+                element[4],
+                element[1],
+                element[2],
+                element[3],
+                element[5],
+                element[6],
+            ]
+            for element in data
+        ]
+        print(
+            self.__formatter.table(
+                header, data, md="|:---|---:|---:|---:|---:|---:|---:|"
+            ),
+            file=self.__file,
+        )
+        print(self.__formatter.column(), file=self.__file)
+
+        print(self.__formatter.column(), file=self.__file)
+        header = ("autoria", "commits")
+        data = gitshortlog.count_commits_by_author_and_date()
         replace_author_column(data)
         data = limit(data, 8, True)
         print(
