@@ -4,76 +4,31 @@ It analyzes the history of the repository and shows general statistics per autho
 It was purely developed for fun, to create a little friendly competition among team members.
 Nevertheless, it calculates interesting timeline analysis and reports code changes over time for a high level overview over the repository.
 
-## Example outputs
-**gitstats** is based on templates which can be customized according to your needs.
-
-### Markdown
-Move to your project directory and execute **gitstats** with Markdown format:
-```sh
-$ cd $PROJECT_DIRECTORY
-$ $GITSTATS_DIRECTORY/gitstats.py --format markdown
+## Requirements
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Poetry](https://python-poetry.org)
+- [Python3.9](https://www.python.org/downloads/release/python-390/)
+ 
+### How to install poetry [>](https://python-poetry.org/docs/)
+```shell
+curl -sSL https://install.python-poetry.org | python3 -
 ```
-Open the output file `gitstats.md` with a markdown viewer.
-#### CUMULATED COMMITS OVER TIME BY AUTHOR
-|date|Romolo|Numa Pompilio|Tullo Ostilio|Anco Marzio|Tarquinio Prisco|Servio Tullio|Tarquinio il Superbo|
-|---|---|---|---|---|---|---|---|
-|2016-02|0|0|0|0|0|0|0|
-|2016-03|5|5|0|0|0|0|0|
-|2016-04|56|33|0|0|0|0|0|
-|2016-05|112|45|0|0|0|0|0|
-|2016-06|126|70|0|0|0|2|0|
-|2016-07|128|84|19|4|0|2|0|
-|2016-08|133|110|21|20|0|2|0|
-|2016-09|136|117|43|28|0|2|0|
-|2016-10|137|135|94|43|8|2|0|
-|2016-11|137|159|109|56|23|2|0|
-|2016-12|137|177|128|69|49|2|0|
-|2017-01|137|183|145|75|62|2|0|
-|2017-02|137|199|213|86|75|2|0|
-|2017-03|137|216|250|104|95|2|0|
-|2017-04|137|230|295|119|120|2|0|
-|2017-05|137|233|338|130|128|2|12|
-|2017-06|137|233|388|148|153|2|20|
-|2017-07|137|233|400|158|161|2|29|
-
-[...]
-
-#### COMMITS BY AUTHOR
-|author|commits|insertions|deletions|% of changes|impact/commit|
-|---|---|---|---|---|---|
-|Tullo Ostilio|400|273229|239169|57|1280|
-|Numa Pompilio|233|65995|27998|10|403|
-|Tarquinio Prisco|161|73754|48478|13|759|
-|Anco Marzio|158|83017|30135|12|716|
-|Romolo|137|23831|14835|4|282|
-|Tarquinio il Superbo|29|4609|833|0|187|
-|Servio Tullio|2|28|18|0|23|
-|total|1120|524463|361466|||
-
-[...]
-
-### [Confluence](https://www.atlassian.com/software/confluence) wiki
-Move to your project directory and execute **gitstats** with confluencewiki format:
->-[ ] TODO: implement a client to directly create/modify the page
-
-```sh
-$ cd $PROJECT_DIRECTORY
-$ $GITSTATS_DIRECTORY/gitstats.py --format confluencewiki
+Set virtualenv in project
+```shell
+poetry config virtualenvs.in-project true
 ```
-
-Copy the content of `gitstats.confluencewiki.txt` in a Confluence page:
-1. Choose **Insert** > **Markup**
-2. Select **Confluence wiki**
-3. Paste your text - the preview will show you how it will appear on your page
-4. Choose **Insert**
-> See [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html)
-
-![cumulated commits over time by authors](images/01-cumulatedCommitsOverTimeByAuthors.png?raw=true "Cumulated commits over time by authors")
-![impacts over time](images/02-impactsOverTime.png?raw=true "Impacts over time")
-![commits over time by authors](images/03-commitsOverTimeByAuthors.png?raw=true "Commits over time by authors")
-![commits by author](images/04-commitsByAuthor.png?raw=true "Commits by author")
-![files by extension](images/05-filesByExtension.png?raw=true "Files by extension")
-![edited lines of code by author](images/06-editedLinesOfCodeByAuthor.png?raw=true "Edited lines of code by author")
+Create virtualenv
+```commandline
+poetry install
+```
+Run test
+```shell
+poetry run pytest
+```
+Run test with coverage
+```shell
+poetry run pytest --cov=src --cov-report=html tests
+```
 
 ## Some features
 - Cumulated commits over time by author
@@ -90,16 +45,42 @@ Copy the content of `gitstats.confluencewiki.txt` in a Confluence page:
 - Most impactful commits
 - Other statistics (global and of the month)
 
-## Resources
-The `resources` directory contains two template you can use to define your own mail mapping and regexes:
-- in `mailmap.yaml` you can link multiple emails to the same author
-- `regexes.yaml` contains the regexes used to check the subject of the commit is compliant and to extract the reviewers  
+## Formats
+- [markdown](https://en.wikipedia.org/wiki/Markdown)
+- [confluencewiki](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html) with the possibility to automatically update a page
 
-## Requirements
-- Git
-- Python 3
+### Markdown
+```shell
+$ poetry run python src/gitstats.py --format markdown <project-directory>
+```
+Open the output file `gitstats.md` with a markdown viewer.
+
+### Confluencewiki
+```shell
+$ poetry run python src/gitstats.py --format confluencewiki <project-directory>
+```
+or
+```shell
+$ poetry run python src/gitstats.py --format confluencewiki --base-url <base-url> --username <username> --password <password> --page-id <page-id> <project-directory>
+```
+
+![cumulated commits over time by authors](images/01-cumulatedCommitsOverTimeByAuthors.png?raw=true "Cumulated commits over time by authors")
+![impact over time](images/02-impactsOverTime.png?raw=true "Impacts over time")
+![commits over time by authors](images/03-commitsOverTimeByAuthors.png?raw=true "Commits over time by authors")
+![commits by author](images/04-commitsByAuthor.png?raw=true "Commits by author")
+![files by extension](images/05-filesByExtension.png?raw=true "Files by extension")
+![edited lines of code by author](images/06-editedLinesOfCodeByAuthor.png?raw=true "Edited lines of code by author")
+
+## Username map file
+A username map file can be used to map usernames and emails. 
+The # character begins a comment to the end of line, blank lines are ignored.
+Each line in the file consists of a username and the email address used in the commit in <>. For example:
+```
+apz <antpza@gmail.com>
+```
 
 ## Related projects
 - [Git](https://git-scm.com/)
 - [GitStats - git history statistics generator](http://gitstats.sourceforge.net/)
 - [Gitinspector](https://github.com/ejwa/gitinspector)
+

@@ -1,3 +1,0 @@
-subject_regexes:
-  - #\d+
-reviewer_regex: ~(\w+)

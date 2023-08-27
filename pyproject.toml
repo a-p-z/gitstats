@@ -1,0 +1,56 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 120
+
+
+[[tool.mypy.overrides]]
+module = "aiocache"
+ignore_missing_imports = true
+
+
+[tool.poetry]
+name = "gitstats"
+version = "0.3.0"
+description = "A simple statistical analysis tool for git repositories"
+authors = ["a-p-z <antpza@gmail.com>"]
+readme = "README.md"
+homepage = "https://github.com/a-p-z/gitstats"
+repository = "https://github.com/a-p-z/gitstats"
+keywords = ["git", "statistics", "development", "repository", "confluence", "gitlog"]
+
+[tool.poetry.dependencies]
+aiohttp = "^3.8.5"
+gitpython = "^3.1.32"
+jinja2 = "^3.1.2"
+python = "^3.11"
+python-dateutil = "^2.8.2"
+aiocache = "^0.12.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+importlib-resources = "^5.12.0"
+mypy = "^1.5.1"
+pytest = "^7.1.2"
+pytest-cov = "^4.0.0"
+ruff = "^0.0.285"
+types-python-dateutil = "^2.8.19.14"
+
+
+[tool.ruff]
+line-length = 120
+select = [
+    # https://beta.ruff.rs/docs/rules/
+    "ARG", # flake8-unused-arguments
+    "E", # pycodestyle
+    "F", # pyflakes
+    "I001", # unsorted-imports
+    "UP", # pyupgrade
+]
+target-version = "py311"
+
+[tool.ruff.isort]
+force-single-line = true

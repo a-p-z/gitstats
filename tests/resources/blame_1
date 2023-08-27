@@ -1,0 +1,25 @@
+b9e10cf0fa1eb7245a66a8e497375aecf9e85eec 47 46
+author Numa Pompilio
+author-mail <numa.pompilio@gitstats.org>
+author-time 1664823231
+author-tz +0200
+committer Tullo Ostilio
+committer-mail <tullo.ostilio@gitstats.org>
+committer-time 1692613007
+committer-tz +0300
+summary summary 1
+boundary
+filename blame_1
+	        content 1
+b9e10cf0fa1eb7245a66a8e497375aecf9e85eec 47 46
+author Numa Pompilio
+author-mail <numa.pompilio@gitstats.org>
+author-time 1664823232
+author-tz +0200
+committer Tullo Ostilio
+committer-mail <tullo.ostilio@gitstats.org>
+committer-time 1692613007
+committer-tz +0300
+summary summary 2
+filename blame_1
+	        content 2

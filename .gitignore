@@ -1,4 +1,7 @@
 *.pyc
 /.idea/
-*/mailmap.yaml
-*/regexes.yaml
+.venv
+.coverage
+gitstats.confluencewiki.txt*
+username_map*
+usermap
